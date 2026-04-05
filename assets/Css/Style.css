@@ -1,0 +1,24 @@
+/* Căn giữa màn hình cho form đăng nhập/đăng ký */
+body {
+    background-color: #f8f9fa;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0; /* Reset margin mặc định */
+}
+
+/* Khung chứa form */
+.auth-card {
+    max-width: 400px;
+    width: 100%;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    background-color: white;
+}
+
+/* Mặc định ẩn form đăng ký khi mới vào trang */
+#register-form {
+    display: none;
+}
