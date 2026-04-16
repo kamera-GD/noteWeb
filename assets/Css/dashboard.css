@@ -32,3 +32,16 @@ body { background-color: #f4f6f8; }
 #saveStatus { font-style: italic; height: 20px; }
 .cursor-pointer { cursor: pointer; }
 .hover-bg-light:hover { background-color: #f8f9fa; }
+
+/* NOTE PASSWORD MODALS */
+#verifyNotePasswordInput,
+#passwordCurrentInput,
+#passwordNewInput,
+#passwordConfirmInput {
+    border-radius: 10px;
+}
+
+#verifyNotePasswordError,
+#manageNotePasswordError {
+    min-height: 18px;
+}
