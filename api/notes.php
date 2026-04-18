@@ -20,6 +20,9 @@ $pdo->exec(
         user_id INT UNSIGNED NOT NULL,
         title VARCHAR(255) NOT NULL DEFAULT "",
         content TEXT NOT NULL,
+        image_url MEDIUMTEXT NULL,
+        text_color VARCHAR(20) NOT NULL DEFAULT "#111827",
+        font_size INT NOT NULL DEFAULT 16,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_user_updated (user_id, updated_at)
@@ -45,6 +48,18 @@ if ((int) $columnStmt->fetchColumn() === 0) {
 $columnStmt->execute(['table_name' => 'notes', 'column_name' => 'note_password_hash']);
 if ((int) $columnStmt->fetchColumn() === 0) {
     $pdo->exec('ALTER TABLE notes ADD COLUMN note_password_hash VARCHAR(255) NULL');
+}
+$columnStmt->execute(['table_name' => 'notes', 'column_name' => 'image_url']);
+if ((int) $columnStmt->fetchColumn() === 0) {
+    $pdo->exec('ALTER TABLE notes ADD COLUMN image_url MEDIUMTEXT NULL');
+}
+$columnStmt->execute(['table_name' => 'notes', 'column_name' => 'text_color']);
+if ((int) $columnStmt->fetchColumn() === 0) {
+    $pdo->exec('ALTER TABLE notes ADD COLUMN text_color VARCHAR(20) NOT NULL DEFAULT "#111827"');
+}
+$columnStmt->execute(['table_name' => 'notes', 'column_name' => 'font_size']);
+if ((int) $columnStmt->fetchColumn() === 0) {
+    $pdo->exec('ALTER TABLE notes ADD COLUMN font_size INT NOT NULL DEFAULT 16');
 }
 $pdo->exec(
     'CREATE TABLE IF NOT EXISTS labels (
@@ -73,7 +88,7 @@ if ($method === 'GET') {
     $labels = $labelStmt->fetchAll();
 
     $stmt = $pdo->prepare(
-        'SELECT n.id, n.title, n.content, n.is_pinned, n.pinned_at, n.is_locked, n.created_at, n.updated_at,
+        'SELECT n.id, n.title, n.content, n.image_url, n.text_color, n.font_size, n.is_pinned, n.pinned_at, n.is_locked, n.created_at, n.updated_at,
                 GROUP_CONCAT(l.name ORDER BY l.name SEPARATOR "||") AS label_names
          FROM notes n
          LEFT JOIN note_labels nl ON nl.note_id = n.id
@@ -98,6 +113,8 @@ if ($method === 'GET') {
         'success' => true,
         'data' => [
             'display_name' => $_SESSION['display_name'] ?? 'User',
+            'email' => $_SESSION['email'] ?? '',
+            'avatar_url' => $_SESSION['avatar_url'] ?? '',
             'labels' => $labels,
             'notes' => $notes
         ]
@@ -177,6 +194,9 @@ if ($action === 'save') {
     $noteId = isset($_POST['note_id']) ? (int) $_POST['note_id'] : 0;
     $title = trim($_POST['title'] ?? '');
     $content = trim($_POST['content'] ?? '');
+    $imageUrl = (string) ($_POST['image_url'] ?? '');
+    $textColor = trim($_POST['text_color'] ?? '#111827');
+    $fontSize = (int) ($_POST['font_size'] ?? 16);
     $labelsInput = json_decode((string) ($_POST['labels'] ?? '[]'), true);
     $notePassword = (string) ($_POST['note_password'] ?? '');
     $labelsInput = is_array($labelsInput) ? $labelsInput : [];
@@ -209,22 +229,28 @@ if ($action === 'save') {
                 exit;
             }
             $updateStmt = $pdo->prepare(
-                'UPDATE notes SET title = :title, content = :content WHERE id = :id AND user_id = :user_id'
+                'UPDATE notes SET title = :title, content = :content, image_url = :image_url, text_color = :text_color, font_size = :font_size WHERE id = :id AND user_id = :user_id'
             );
             $updateStmt->execute([
                 'title' => $title,
                 'content' => $content,
+                'image_url' => $imageUrl !== '' ? $imageUrl : null,
+                'text_color' => $textColor !== '' ? $textColor : '#111827',
+                'font_size' => $fontSize > 0 ? $fontSize : 16,
                 'id' => $noteId,
                 'user_id' => $userId
             ]);
         } else {
             $insertStmt = $pdo->prepare(
-                'INSERT INTO notes (user_id, title, content) VALUES (:user_id, :title, :content)'
+                'INSERT INTO notes (user_id, title, content, image_url, text_color, font_size) VALUES (:user_id, :title, :content, :image_url, :text_color, :font_size)'
             );
             $insertStmt->execute([
                 'user_id' => $userId,
                 'title' => $title,
-                'content' => $content
+                'content' => $content,
+                'image_url' => $imageUrl !== '' ? $imageUrl : null,
+                'text_color' => $textColor !== '' ? $textColor : '#111827',
+                'font_size' => $fontSize > 0 ? $fontSize : 16
             ]);
             $noteId = (int) $pdo->lastInsertId();
         }

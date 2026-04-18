@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(191) NOT NULL UNIQUE,
     display_name VARCHAR(120) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    avatar_url MEDIUMTEXT DEFAULT NULL,
     is_activated TINYINT(1) NOT NULL DEFAULT 0,
     activation_token VARCHAR(100) DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

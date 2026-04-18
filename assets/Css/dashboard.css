@@ -1,5 +1,30 @@
-body { background-color: #f4f6f8; }
-.navbar { background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+body { background-color: #f4f6f8; color: #1f2937; transition: background-color 0.25s ease, color 0.25s ease; }
+.navbar { background-color: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: background-color 0.25s ease, color 0.25s ease; }
+
+body.dark-mode { background-color: #111827; color: #e5e7eb; }
+body.dark-mode .navbar { background-color: #1f2937; box-shadow: 0 2px 4px rgba(0,0,0,0.25); }
+body.dark-mode .note-card,
+body.dark-mode .modal-content,
+body.dark-mode .form-control,
+body.dark-mode .form-select { background-color: #1f2937; color: #e5e7eb; border-color: #374151; }
+body.dark-mode .note-card { box-shadow: 0 2px 8px rgba(0,0,0,0.35); }
+body.dark-mode .text-muted,
+body.dark-mode .form-text,
+body.dark-mode .modal-title,
+body.dark-mode .nav-link,
+body.dark-mode .navbar-brand,
+body.dark-mode #searchInput::placeholder { color: #ffffff !important; }
+body.dark-mode .nav-link:hover,
+body.dark-mode .nav-link.active { background-color: #374151; }
+body.dark-mode .btn-outline-secondary,
+body.dark-mode .btn-outline-dark,
+body.dark-mode .btn-light { color: #e5e7eb; border-color: #4b5563; background-color: transparent; }
+body.dark-mode .btn-light { background-color: #374151; }
+body.dark-mode .bg-light { background-color: #374151 !important; }
+body.dark-mode .text-dark { color: #e5e7eb !important; }
+body.dark-mode .border,
+body.dark-mode .border-bottom { border-color: #374151 !important; }
+.theme-toggle-btn { min-width: 130px; }
 
 /* SIDEBAR STYLES */
 .sidebar-container {

@@ -70,6 +70,11 @@ loginForm.addEventListener('submit', async function (e) {
     }
 });
 
+const openVerificationPage = (email) => {
+    const encodedEmail = encodeURIComponent(email);
+    window.location.href = `page/verify-email.html?email=${encodedEmail}`;
+};
+
 registerForm.addEventListener('submit', async function (e) {
     e.preventDefault();
     hideAlert();
@@ -88,8 +93,9 @@ registerForm.addEventListener('submit', async function (e) {
             showAlert(result.message || 'Đăng ký thất bại');
             return;
         }
-        showAlert('Đăng ký thành công, đang chuyển trang...', 'success');
-        window.location.href = 'page/dashboard.html';
+        showAlert('Đăng ký thành công, chuyển đến trang xác thực email...', 'success');
+        const email = document.getElementById('regEmail').value.trim();
+        openVerificationPage(email);
     } catch (error) {
         showAlert('Không thể kết nối máy chủ');
     } finally {

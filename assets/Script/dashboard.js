@@ -6,7 +6,32 @@ document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('searchInput');
     const btnAddNote = document.getElementById('btnAddNote');
     const btnLogout = document.getElementById('btnLogout');
+    const btnToggleTheme = document.getElementById('btnToggleTheme');
+    const themeIcon = document.getElementById('themeIcon');
+    const themeText = document.getElementById('themeText');
+    const btnOpenProfile = document.getElementById('btnOpenProfile');
     const currentUserName = document.getElementById('currentUserName');
+    const currentUserAvatar = document.getElementById('currentUserAvatar');
+    const profileModal = new bootstrap.Modal(document.getElementById('profileModal'));
+    const changePasswordModal = new bootstrap.Modal(document.getElementById('changePasswordModal'));
+    const profileForm = document.getElementById('profileForm');
+    const profileAvatarPreview = document.getElementById('profileAvatarPreview');
+    const profileAvatarInput = document.getElementById('profileAvatarInput');
+    const profileDisplayName = document.getElementById('profileDisplayName');
+    const profileEmail = document.getElementById('profileEmail');
+    const profileError = document.getElementById('profileError');
+    const btnOpenChangePassword = document.getElementById('btnOpenChangePassword');
+    const btnOpenChangeEmail = document.getElementById('btnOpenChangeEmail');
+    const changePasswordForm = document.getElementById('changePasswordForm');
+    const currentPassword = document.getElementById('currentPassword');
+    const newProfilePassword = document.getElementById('newProfilePassword');
+    const confirmProfilePassword = document.getElementById('confirmProfilePassword');
+    const changePasswordError = document.getElementById('changePasswordError');
+    const changeEmailModal = new bootstrap.Modal(document.getElementById('changeEmailModal'));
+    const changeEmailForm = document.getElementById('changeEmailForm');
+    const newProfileEmail = document.getElementById('newProfileEmail');
+    const emailCurrentPassword = document.getElementById('emailCurrentPassword');
+    const changeEmailError = document.getElementById('changeEmailError');
     const allNotesLink = document.getElementById('allNotesLink');
     const sidebarLabelList = document.getElementById('sidebarLabelList');
     const noteLabelsContainer = document.getElementById('noteLabelsContainer');
@@ -25,6 +50,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const noteContent = document.getElementById('noteContent');
     const noteId = document.getElementById('noteId');
     const saveStatus = document.getElementById('saveStatus');
+    const noteImageInput = document.getElementById('noteImageInput');
+    const noteImagePreviewWrap = document.getElementById('noteImagePreviewWrap');
+    const noteImagePreview = document.getElementById('noteImagePreview');
+    const btnPickNoteImage = document.getElementById('btnPickNoteImage');
+    const btnRemoveNoteImage = document.getElementById('btnRemoveNoteImage');
+    const noteTextColorSelect = document.getElementById('noteTextColorSelect');
+    const noteFontSizeSelect = document.getElementById('noteFontSizeSelect');
     const btnDeleteInModal = document.getElementById('btnDeleteInModal');
     const btnTogglePassword = document.getElementById('btnTogglePassword');
     const verifyNotePasswordForm = document.getElementById('verifyNotePasswordForm');
@@ -46,6 +78,9 @@ document.addEventListener('DOMContentLoaded', function () {
     let currentNoteLabels = [];
     let currentNoteIsLocked = false;
     let currentNotePassword = '';
+    let currentNoteImage = '';
+    let currentNoteTextColor = '#111827';
+    let currentNoteFontSize = '16';
     let noteIdToDelete = 0;
     let verifyTargetAction = '';
     let verifyTargetNoteId = 0;
@@ -62,6 +97,54 @@ document.addEventListener('DOMContentLoaded', function () {
             throw new Error('unauthorized');
         }
         return result;
+    };
+
+    const callAuthApi = async (formData) => {
+        const response = await fetch('../api/auth.php', { method: 'POST', body: formData });
+        return response.json();
+    };
+
+    const defaultAvatar = () => 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+            <rect width="200" height="200" rx="100" fill="#d9d9d9"/>
+            <circle cx="100" cy="78" r="32" fill="#bfbfbf"/>
+            <path d="M42 172c12-35 38-52 58-52s46 17 58 52" fill="#bfbfbf"/>
+        </svg>
+    `);
+
+    let selectedProfileAvatar = '';
+    let existingProfileAvatar = '';
+
+    const setProfileAvatar = (url) => {
+        const avatar = url || defaultAvatar();
+        currentUserAvatar.src = avatar;
+        profileAvatarPreview.src = avatar;
+        existingProfileAvatar = url || '';
+        selectedProfileAvatar = '';
+    };
+
+    const getProfileAvatarValue = () => selectedProfileAvatar || existingProfileAvatar;
+
+    const clearProfileErrors = () => {
+        profileError.textContent = '';
+        profileError.classList.add('d-none');
+        changePasswordError.textContent = '';
+        changePasswordError.classList.add('d-none');
+        changeEmailError.textContent = '';
+        changeEmailError.classList.add('d-none');
+    };
+
+    const applyTheme = (theme) => {
+        const isDark = theme === 'dark';
+        document.body.classList.toggle('dark-mode', isDark);
+        themeIcon.className = isDark ? 'fa-solid fa-sun me-1' : 'fa-solid fa-moon me-1';
+        themeText.textContent = isDark ? 'Light mode' : 'Dark mode';
+        localStorage.setItem('dashboardTheme', theme);
+    };
+
+    const initTheme = () => {
+        const savedTheme = localStorage.getItem('dashboardTheme') || 'light';
+        applyTheme(savedTheme);
     };
 
     const escapeHtml = (text) => String(text || '')
@@ -103,8 +186,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         <i class="fa-solid fa-thumbtack ${Number(note.is_pinned) === 1 ? 'text-warning' : 'text-secondary'} btn-pin me-1" data-id="${note.id}" data-pinned="${Number(note.is_pinned) === 1 ? '1' : '0'}" title="${Number(note.is_pinned) === 1 ? 'Bỏ ghim' : 'Ghim lên đầu'}"></i>
                         <i class="fa-solid fa-trash-can text-danger btn-delete" data-id="${note.id}" title="Xóa"></i>
                     </div>
-                    <div class="note-title">${escapeHtml(note.title || 'Ghi chú không tên')}</div>
-                    <div class="note-content mb-3">${escapeHtml(note.content || '')}</div>
+                    ${note.image_url ? `<img src="${escapeHtml(note.image_url)}" class="img-fluid rounded mb-2" style="max-height: 160px; width:100%; object-fit: cover;" alt="note image">` : ''}
+                    <div class="note-title" style="color:${escapeHtml(note.text_color || '#111827')}; font-size:${Number(note.font_size || 16)}px;">${escapeHtml(note.title || 'Ghi chú không tên')}</div>
+                    <div class="note-content mb-3" style="color:${escapeHtml(note.text_color || '#555')}; font-size:${Number(note.font_size || 16)}px;">${escapeHtml(note.content || '')}</div>
                     ${note.labels && note.labels.length > 0 ? `<div class="note-labels">${note.labels.map((name) => `<span class="badge bg-secondary rounded-pill fw-normal">${escapeHtml(name)}</span>`).join('')}</div>` : ''}
                 </div>
             </div>
@@ -163,9 +247,16 @@ document.addEventListener('DOMContentLoaded', function () {
         noteId.value = String(note.id);
         currentNoteIsLocked = Number(note.is_locked) === 1;
         currentNotePassword = password;
+        currentNoteImage = note.image_url || '';
+        currentNoteTextColor = note.text_color || '#111827';
+        currentNoteFontSize = String(note.font_size || 16);
         noteTitle.value = note.title || '';
         noteContent.value = note.content || '';
         currentNoteLabels = Array.isArray(note.labels) ? [...note.labels] : [];
+        noteImagePreview.src = currentNoteImage || '';
+        noteImagePreviewWrap.classList.toggle('d-none', !currentNoteImage);
+        noteTextColorSelect.value = currentNoteTextColor;
+        noteFontSizeSelect.value = currentNoteFontSize;
         renderLabelBadgesInModal();
         saveStatus.textContent = 'Đang chỉnh sửa, hệ thống sẽ tự lưu';
         saveStatus.className = 'text-muted small mt-2 text-end';
@@ -179,6 +270,9 @@ document.addEventListener('DOMContentLoaded', function () {
             notes = result.data.notes || [];
             labels = result.data.labels || [];
             currentUserName.textContent = result.data.display_name || 'User';
+            setProfileAvatar(result.data.avatar_url || '');
+            profileDisplayName.value = result.data.display_name || '';
+            profileEmail.value = result.data.email || '';
             renderSidebarLabels();
             renderManageLabels();
             applySearch(searchInput.value);
@@ -188,6 +282,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 saveStatus.className = 'text-danger small mt-2 text-end';
             }
         }
+    };
+
+    const syncProfileFromServer = async () => {
+        const formData = new FormData();
+        formData.append('action', 'get_profile');
+        const result = await callAuthApi(formData);
+        if (!result.success) return;
+        profileDisplayName.value = result.data.display_name || '';
+        profileEmail.value = result.data.email || '';
+        setProfileAvatar(result.data.avatar_url || '');
+        currentUserName.textContent = result.data.display_name || 'User';
     };
 
     const saveCurrentNote = async () => {
@@ -211,6 +316,9 @@ document.addEventListener('DOMContentLoaded', function () {
         formData.append('title', title);
         formData.append('content', content);
         formData.append('labels', JSON.stringify(currentNoteLabels));
+        formData.append('image_url', currentNoteImage);
+        formData.append('text_color', currentNoteTextColor);
+        formData.append('font_size', currentNoteFontSize);
         if (currentId && currentNoteIsLocked) {
             formData.append('note_password', currentNotePassword);
         }
@@ -249,6 +357,13 @@ document.addEventListener('DOMContentLoaded', function () {
         currentNoteLabels = [];
         currentNoteIsLocked = false;
         currentNotePassword = '';
+        currentNoteImage = '';
+        currentNoteTextColor = '#111827';
+        currentNoteFontSize = '16';
+        noteImagePreview.src = '';
+        noteImagePreviewWrap.classList.add('d-none');
+        noteTextColorSelect.value = currentNoteTextColor;
+        noteFontSizeSelect.value = currentNoteFontSize;
         renderLabelBadgesInModal();
         saveStatus.textContent = 'Nhập tiêu đề hoặc nội dung để tự lưu';
         saveStatus.className = 'text-muted small mt-2 text-end';
@@ -437,6 +552,38 @@ document.addEventListener('DOMContentLoaded', function () {
     noteTitle.addEventListener('input', scheduleAutoSave);
     noteContent.addEventListener('input', scheduleAutoSave);
 
+    btnPickNoteImage.addEventListener('click', () => noteImageInput.click());
+    noteImageInput.addEventListener('change', () => {
+        const file = noteImageInput.files && noteImageInput.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            currentNoteImage = String(reader.result || '');
+            noteImagePreview.src = currentNoteImage;
+            noteImagePreviewWrap.classList.remove('d-none');
+            scheduleAutoSave();
+        };
+        reader.readAsDataURL(file);
+    });
+
+    btnRemoveNoteImage.addEventListener('click', () => {
+        currentNoteImage = '';
+        noteImagePreview.src = '';
+        noteImagePreviewWrap.classList.add('d-none');
+        noteImageInput.value = '';
+        scheduleAutoSave();
+    });
+
+    noteTextColorSelect.addEventListener('change', () => {
+        currentNoteTextColor = noteTextColorSelect.value;
+        scheduleAutoSave();
+    });
+
+    noteFontSizeSelect.addEventListener('change', () => {
+        currentNoteFontSize = noteFontSizeSelect.value;
+        scheduleAutoSave();
+    });
+
     noteLabelsContainer.addEventListener('change', (event) => {
         if (event.target.id !== 'noteLabelSelect') return;
         const labelName = event.target.value.trim();
@@ -471,6 +618,17 @@ document.addEventListener('DOMContentLoaded', function () {
         notesContainer.classList.add('list-view');
         btnList.classList.add('active');
         btnGrid.classList.remove('active');
+    });
+
+    btnToggleTheme.addEventListener('click', () => {
+        const nextTheme = document.body.classList.contains('dark-mode') ? 'light' : 'dark';
+        applyTheme(nextTheme);
+    });
+
+    btnOpenProfile.addEventListener('click', async () => {
+        clearProfileErrors();
+        await syncProfileFromServer();
+        profileModal.show();
     });
 
     btnLogout.addEventListener('click', async () => {
@@ -518,6 +676,108 @@ document.addEventListener('DOMContentLoaded', function () {
         await loadNotes();
     });
 
+    profileAvatarInput.addEventListener('change', () => {
+        const file = profileAvatarInput.files && profileAvatarInput.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            const dataUrl = String(reader.result || '');
+            selectedProfileAvatar = dataUrl;
+            currentUserAvatar.src = dataUrl;
+            profileAvatarPreview.src = dataUrl;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    profileForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        clearProfileErrors();
+        const formData = new FormData();
+        formData.append('action', 'update_profile');
+        formData.append('display_name', profileDisplayName.value.trim());
+        formData.append('email', profileEmail.value.trim());
+        formData.append('avatar_url', getProfileAvatarValue());
+        const result = await callAuthApi(formData);
+        if (!result.success) {
+            profileError.textContent = result.message || 'Không thể cập nhật hồ sơ';
+            profileError.classList.remove('d-none');
+            return;
+        }
+        currentUserName.textContent = result.data.display_name || 'User';
+        setProfileAvatar(result.data.avatar_url || '');
+        profileModal.hide();
+        await syncProfileFromServer();
+        await loadNotes();
+    });
+
+    changeEmailForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        changeEmailError.textContent = '';
+        changeEmailError.classList.add('d-none');
+        const enteredEmail = newProfileEmail.value.trim();
+        const enteredPassword = emailCurrentPassword.value;
+        if (!enteredEmail || !enteredPassword) {
+            changeEmailError.textContent = 'Vui lòng nhập đủ email mới và mật khẩu hiện tại';
+            changeEmailError.classList.remove('d-none');
+            return;
+        }
+        const formData = new FormData();
+        formData.append('action', 'change_email');
+        formData.append('current_password', enteredPassword);
+        formData.append('new_email', enteredEmail);
+        formData.append('confirm_email', enteredEmail);
+        const result = await callAuthApi(formData);
+        if (!result.success) {
+            changeEmailError.textContent = result.message || 'Không thể đổi email';
+            changeEmailError.classList.remove('d-none');
+            return;
+        }
+        changeEmailModal.hide();
+        await syncProfileFromServer();
+        await loadNotes();
+    });
+
+    btnOpenChangePassword.addEventListener('click', () => {
+        changePasswordError.textContent = '';
+        changePasswordError.classList.add('d-none');
+        currentPassword.value = '';
+        newProfilePassword.value = '';
+        confirmProfilePassword.value = '';
+        changePasswordModal.show();
+    });
+
+    btnOpenChangeEmail.addEventListener('click', () => {
+        changeEmailError.textContent = '';
+        changeEmailError.classList.add('d-none');
+        newProfileEmail.value = profileEmail.value;
+        emailCurrentPassword.value = '';
+        changeEmailModal.show();
+    });
+
+    changePasswordForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        changePasswordError.textContent = '';
+        changePasswordError.classList.add('d-none');
+        if (newProfilePassword.value !== confirmProfilePassword.value) {
+            changePasswordError.textContent = 'Mật khẩu xác nhận không khớp';
+            changePasswordError.classList.remove('d-none');
+            return;
+        }
+        const formData = new FormData();
+        formData.append('action', 'change_password');
+        formData.append('current_password', currentPassword.value);
+        formData.append('new_password', newProfilePassword.value);
+        formData.append('confirm_password', confirmProfilePassword.value);
+        const result = await callAuthApi(formData);
+        if (!result.success) {
+            changePasswordError.textContent = result.message || 'Không thể đổi mật khẩu';
+            changePasswordError.classList.remove('d-none');
+            return;
+        }
+        changePasswordModal.hide();
+        await syncProfileFromServer();
+    });
+
     editLabelList.addEventListener('change', async (event) => {
         const input = event.target.closest('.label-name-input');
         if (!input) return;
@@ -549,5 +809,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     updatePasswordActionUI();
+    initTheme();
     loadNotes();
 });
